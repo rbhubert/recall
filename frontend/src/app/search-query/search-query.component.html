@@ -1,0 +1,561 @@
+<mat-grid-list cols="20" rowHeight="50px" *ngIf="selectedModel_correct">
+    <mat-grid-tile [colspan]="20" [rowspan]="1">
+        <div>
+            Selected model:
+            <strong>{{ selectedModel_package.model_name }}</strong>
+        </div>
+    </mat-grid-tile>
+</mat-grid-list>
+<mat-accordion class="example-headers-align">
+    <mat-expansion-panel
+        [expanded]="step === 0"
+        (opened)="setStep(0)"
+        hideToggle
+    >
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                <strong>Training the model</strong>
+            </mat-panel-title>
+            <mat-panel-description>
+                Select or create a new model, and train it providing examples of
+                relevant and irrelevant documents.
+                <span class="material-icons">
+                    thumbs_up_down
+                </span>
+            </mat-panel-description>
+        </mat-expansion-panel-header>
+        <mat-grid-list cols="20" rowHeight="50px">
+            <mat-grid-tile [colspan]="3" [rowspan]="3">
+                <mat-radio-group
+                    aria-labelledby="example-radio-group-label"
+                    class="example-radio-group"
+                    [(ngModel)]="f_isNewModel"
+                >
+                    <mat-radio-button
+                        class="example-radio-button"
+                        [value]="0"
+                        (click)="askForModels()"
+                    >
+                        Use existing model
+                    </mat-radio-button>
+                    <mat-radio-button class="example-radio-button" [value]="1">
+                        Create a new model
+                    </mat-radio-button>
+                </mat-radio-group>
+            </mat-grid-tile>
+            <mat-grid-tile [colspan]="4" [rowspan]="3">
+                <form class="grid-selectModel" #selectModelForm="ngForm"></form>
+                <div *ngIf="f_isNewModel == 0">
+                    <form class="grid-selectModel" #selectModelForm="ngForm">
+                        <mat-form-field>
+                            <mat-label>Select a model</mat-label>
+                            <mat-select
+                                [(ngModel)]="f_selectedModel"
+                                name="model"
+                            >
+                                <mat-option
+                                    *ngFor="let model of models"
+                                    [value]="model.name"
+                                >
+                                    {{ model.name }}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </form>
+                </div>
+                <div *ngIf="f_isNewModel == 1">
+                    <form class="grid-selectModel" #selectModelForm="ngForm">
+                        <mat-form-field>
+                            <mat-label>New model name </mat-label>
+                            <input
+                                [(ngModel)]="f_newModelName"
+                                matInput
+                                name="modelName"
+                                required
+                            />
+                        </mat-form-field>
+                        <mat-label class="radioLabel"> Type of data </mat-label>
+                        <mat-radio-group
+                            [(ngModel)]="f_typeOfData"
+                            name="typeDataModel"
+                            required
+                        >
+                            <mat-radio-button
+                                class="radiox"
+                                *ngFor="let source of sources"
+                                [value]="source.name"
+                            >
+                                {{ source.viewValue }}
+                            </mat-radio-button>
+                        </mat-radio-group>
+                    </form>
+                </div>
+            </mat-grid-tile>
+            <mat-grid-tile [colspan]="1" [rowspan]="3" class="tile2">
+                <span class="material-icons">
+                    arrow_right_alt
+                </span>
+            </mat-grid-tile>
+            <mat-grid-tile [colspan]="6" [rowspan]="3">
+                <form class="grid-relevantNews" #relevantNewsForm="ngForm">
+                    <mat-form-field class="example-full-width">
+                        <mat-label
+                            >Add some urls of
+                            <strong>relevant</strong> news</mat-label
+                        >
+                        <textarea
+                            [(ngModel)]="f_relevantNews"
+                            name="relevant"
+                            matInput
+                            placeholder="Separated by spaces or enters"
+                            required
+                        ></textarea>
+                    </mat-form-field>
+                </form>
+            </mat-grid-tile>
+            <mat-grid-tile [colspan]="6" [rowspan]="3">
+                <form class="grid-relevantNews" #relevantNewsForm="ngForm">
+                    <mat-form-field class="example-full-width">
+                        <mat-label
+                            >Add some urls of
+                            <strong>irrelevant</strong> news</mat-label
+                        >
+                        <textarea
+                            [(ngModel)]="f_irrelevantNews"
+                            name="irrelevant"
+                            matInput
+                            placeholder="Separated by spaces or enters"
+                            required
+                        ></textarea>
+                    </mat-form-field>
+                </form>
+            </mat-grid-tile>
+            <mat-grid-tile [colspan]="4" [rowspan]="1"> </mat-grid-tile>
+            <mat-grid-tile [colspan]="2" [rowspan]="1">
+                <button
+                    *ngIf="f_isNewModel == 0"
+                    mat-button
+                    color="primary"
+                    (click)="selectModel()"
+                    [disabled]="!selectFormModelIsCorrect()"
+                >
+                    SELECT MODEL
+                </button>
+                <button
+                    *ngIf="f_isNewModel == 1"
+                    mat-button
+                    color="primary"
+                    (click)="createModel()"
+                    [disabled]="!createFormModelIsCorrect()"
+                >
+                    CREATE MODEL
+                </button>
+            </mat-grid-tile>
+            <mat-grid-tile [colspan]="7" [rowspan]="1"> </mat-grid-tile>
+            <mat-grid-tile
+                [colspan]="2"
+                [rowspan]="1"
+                *ngIf="jobIDs.training === ''"
+            >
+                <button
+                    mat-button
+                    color="primary"
+                    (click)="trainModel()"
+                    [disabled]="!relevantNewsFormIsCorrect()"
+                >
+                    TRAIN MODEL
+                </button>
+            </mat-grid-tile>
+            <mat-grid-tile
+                [colspan]="2"
+                [rowspan]="1"
+                *ngIf="jobIDs.training != ''"
+            >
+                This can take a few seconds. <mat-spinner></mat-spinner>
+            </mat-grid-tile>
+        </mat-grid-list>
+    </mat-expansion-panel>
+    <mat-expansion-panel
+        [expanded]="step === 1"
+        (opened)="setStep(1)"
+        hideToggle
+        [disabled]="!selectedModel_correct"
+    >
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                <strong>Search documents</strong>
+            </mat-panel-title>
+            <mat-panel-description>
+                Now you can search for other documents. Select where do you want
+                to search, and write your query using relevant keywords.
+                <span class="material-icons">
+                    search
+                </span>
+            </mat-panel-description>
+        </mat-expansion-panel-header>
+        <mat-grid-list cols="20" rowHeight="50px">
+            <mat-grid-tile [colspan]="3" [rowspan]="2">
+                <mat-radio-group
+                    aria-labelledby="example-radio-group-label"
+                    [(ngModel)]="f_search"
+                >
+                    <mat-radio-button class="example-radio-button" [value]="0">
+                        Search new documents
+                    </mat-radio-button>
+                    <mat-radio-button
+                        class="example-radio-button"
+                        [value]="1"
+                        disabled
+                    >
+                        Classify from urls
+                    </mat-radio-button>
+                </mat-radio-group>
+            </mat-grid-tile>
+            <mat-grid-tile [colspan]="10" [rowspan]="2">
+                <div class="grid-searchQuery" *ngIf="f_search == 0">
+                    <form class="grid-searchQuery" #queryForm="ngForm">
+                        <mat-form-field>
+                            <mat-label>Choose where to search</mat-label>
+                            <mat-select
+                                [(ngModel)]="f_selectedSource"
+                                name="source"
+                                required
+                            >
+                                <mat-option
+                                    *ngFor="let source of sources"
+                                    [value]="source.name"
+                                >
+                                    {{ source.viewValue }}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                        <mat-form-field class="example-full-width">
+                            <mat-label>Introduce query</mat-label>
+                            <input
+                                [(ngModel)]="f_query"
+                                matInput
+                                placeholder="Search for keywords such as you would do on Google"
+                                name="query"
+                                required
+                            />
+                        </mat-form-field>
+                    </form>
+                </div>
+                <div class="grid-searchQuery" *ngIf="f_search == 1">
+                    <form class="grid-searchQuery" #queryForm="ngForm">
+                        <mat-form-field>
+                            <mat-label>Choose where to search</mat-label>
+                            <mat-select
+                                [(ngModel)]="f_selectedSource"
+                                name="source"
+                                required
+                            >
+                                <mat-option
+                                    *ngFor="let source of sources"
+                                    [value]="source.name"
+                                >
+                                    {{ source.viewValue }}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                        <mat-form-field class="example-full-width">
+                            <mat-label>Add some urls of news</mat-label>
+                            <textarea
+                                [(ngModel)]="f_query"
+                                name="query"
+                                matInput
+                                placeholder="Separated by spaces or enters"
+                                required
+                            ></textarea>
+                        </mat-form-field>
+                    </form>
+                </div>
+            </mat-grid-tile>
+            <mat-grid-tile [colspan]="3" [rowspan]="2">
+                <button
+                    *ngIf="f_search == 0"
+                    mat-button
+                    color="primary"
+                    (click)="searchQuery()"
+                    [disabled]="!queryFormIsCorrect()"
+                >
+                    SEARCH DOCUMENTS
+                </button>
+                <button
+                    *ngIf="f_search == 1"
+                    mat-button
+                    color="primary"
+                    (click)="searchQuery()"
+                    [disabled]="!queryFormIsCorrect()"
+                >
+                    CLASSIFY DOCUMENTS
+                </button>
+            </mat-grid-tile>
+            <mat-grid-tile
+                [colspan]="3"
+                [rowspan]="2"
+                *ngIf="jobIDs.searching != ''"
+            >
+                This will take a while. Come back in a few minutes.
+                <mat-spinner></mat-spinner>
+            </mat-grid-tile>
+        </mat-grid-list>
+    </mat-expansion-panel>
+    <mat-expansion-panel
+        [expanded]="step === 2"
+        (opened)="callFirstForDocuments()"
+        hideToggle
+        [disabled]="!selectedModel_correct"
+    >
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                <strong>Refining results</strong>
+            </mat-panel-title>
+            <mat-panel-description>
+                The model will give you some documents, classify them as
+                relevant or irrelevant. This will help to achieve better results
+                :)
+                <span class="material-icons">
+                    all_inclusive
+                </span>
+            </mat-panel-description>
+        </mat-expansion-panel-header>
+        <mat-grid-list cols="30">
+            <mat-grid-tile [colspan]="30" [rowspan]="2">
+                <mat-card class="complete-card">
+                    Explore news {{ value_slider * 100 }}% relevant
+                    <mat-slider
+                        class="slider_news"
+                        [max]="1.0"
+                        [min]="0"
+                        [step]="0.1"
+                        [thumbLabel]="true"
+                        [(ngModel)]="value_slider"
+                    >
+                    </mat-slider>
+                    <button
+                        mat-mini-fab
+                        (click)="callForDocuments(value_slider)"
+                        [disabled]="last_range == value_slider"
+                    >
+                        <mat-icon>autorenew</mat-icon>
+                    </button>
+                    <mat-checkbox
+                        [(ngModel)]="show_plot"
+                        color="warn"
+                        (ngModelChange)="showPlot()"
+                    >
+                        Show plot
+                    </mat-checkbox>
+                </mat-card>
+            </mat-grid-tile>
+            <mat-grid-tile
+                class="list_docs"
+                [colspan]="colsDocs"
+                [rowspan]="15"
+            >
+                <div class="internalMatGrid">
+                    <mat-card class="card-documents">
+                        <mat-card-header>
+                            <mat-card-title
+                                >Documents to classify</mat-card-title
+                            >
+                            <mat-card-subtitle *ngIf="value_slider >= 0.5"
+                                >that are {{ value_slider * 100 }}-{{
+                                    (value_slider + 0.1) * 100
+                                }}% relevants</mat-card-subtitle
+                            >
+                            <mat-card-subtitle *ngIf="value_slider < 0.5"
+                                >that are
+                                {{ (1 - value_slider - 0.1) * 100 }}-{{
+                                    (1 - value_slider) * 100
+                                }}% no relevants</mat-card-subtitle
+                            >
+                            <mat-paginator
+                                class="paginator_docs"
+                                [length]="length"
+                                [pageSize]="pageSize"
+                                (page)="changeToClassify($event)"
+                            >
+                            </mat-paginator
+                        ></mat-card-header>
+                        <mat-grid-list cols="5" rowHeight="20px">
+                            <ng-container
+                                *ngFor="let document of documents_to_classify"
+                            >
+                                <mat-grid-tile [colspan]="1" [rowspan]="5">
+                                    <p class="probBadge">
+                                        {{ document.probability }}
+                                    </p>
+                                </mat-grid-tile>
+                                <mat-grid-tile
+                                    [colspan]="2"
+                                    [rowspan]="5"
+                                    class="relevantDoc"
+                                >
+                                    <div>
+                                        <a
+                                            href="{{ document.url }}"
+                                            target="_blank"
+                                        >
+                                            {{ document.title }}</a
+                                        >
+                                        ({{ document.number_words }})
+                                    </div>
+                                </mat-grid-tile>
+                                <mat-grid-tile
+                                    [colspan]="1"
+                                    [rowspan]="1"
+                                ></mat-grid-tile>
+
+                                <mat-grid-tile [colspan]="1" [rowspan]="5">
+                                    <mat-checkbox
+                                        [(ngModel)]="document.update"
+                                        color="warn"
+                                        (ngModelChange)="
+                                            updateInfoSection(document)
+                                        "
+                                    >
+                                        Update doc info
+                                    </mat-checkbox>
+                                </mat-grid-tile>
+                                <mat-grid-tile
+                                    [colspan]="1"
+                                    [rowspan]="3"
+                                    class="relevantDoc"
+                                >
+                                    <mat-slide-toggle
+                                        [(ngModel)]="
+                                            document.classification_user
+                                        "
+                                    >
+                                        <p
+                                            class="p_toggle"
+                                            *ngIf="
+                                                !document.classification_user
+                                            "
+                                        >
+                                            Not relevant
+                                        </p>
+                                        <p
+                                            class="p_toggle"
+                                            *ngIf="document.classification_user"
+                                        >
+                                            Relevant
+                                        </p>
+                                    </mat-slide-toggle>
+                                </mat-grid-tile>
+                                <mat-grid-tile
+                                    [colspan]="1"
+                                    [rowspan]="1"
+                                ></mat-grid-tile>
+                            </ng-container>
+                        </mat-grid-list>
+                        <div *ngIf="documents_to_classify.length == 0">
+                            No documents classified in this range.
+                        </div>
+                        <mat-card-actions
+                            *ngIf="documents_to_classify.length > 0"
+                        >
+                            <button
+                                mat-button
+                                (click)="copyDocumentsToClassify()"
+                            >
+                                COPY DOCS TO CLIPBOARD
+                            </button>
+                            <button mat-button (click)="classifyDocuments()">
+                                UPDATE CLASSIFICATION
+                            </button>
+                        </mat-card-actions></mat-card
+                    >
+                </div>
+            </mat-grid-tile>
+            <mat-grid-tile
+                class="plot"
+                [colspan]="13"
+                [rowspan]="12"
+                *ngIf="show_plot"
+            >
+                <plotly-plot
+                    *ngIf="graph.data.length > 0"
+                    class="plot_docs"
+                    [data]="graph.data"
+                    [layout]="graph.layout"
+                ></plotly-plot>
+            </mat-grid-tile>
+            <mat-grid-tile
+                class="plot"
+                [colspan]="13"
+                [rowspan]="2"
+                *ngIf="show_plot"
+                ><mat-card class="card-plot">
+                    <mat-card-actions
+                        ><button mat-button (click)="addClassificationByModel()">
+                            SEE MODEL CLASSIFICATION OF CLASSIFIED DOCUMENTS</button
+                        ><button mat-button (click)="copyRelevants()">
+                            COPY RELEVANTS DOCUMENTS</button
+                        ><button mat-button (click)="copyNotRelevants()">
+                            COPY NOT-RELEVANTS DOCUMENTS
+                        </button></mat-card-actions
+                    ></mat-card
+                ></mat-grid-tile
+            >
+            <mat-grid-tile
+                class="update_info"
+                [colspan]="13"
+                [rowspan]="6"
+                *ngIf="update_document"
+            >
+                <mat-card class="card-doc-info">
+                    <mat-card-header>
+                        <mat-card-title
+                            >Update info</mat-card-title
+                        > </mat-card-header
+                    ><mat-card-content
+                        ><form class="example-form">
+                            <mat-form-field class="example-full-width">
+                                <mat-label>Title</mat-label>
+                                <input
+                                    matInput
+                                    [(ngModel)]="form_title"
+                                    name="title"
+                                />
+                            </mat-form-field>
+
+                            <mat-form-field class="example-full-width">
+                                <mat-label>News item content</mat-label>
+                                <textarea
+                                    class="textarea_doc"
+                                    matInput
+                                    [(ngModel)]="form_content"
+                                    name="text_content"
+                                ></textarea>
+                            </mat-form-field>
+                        </form>
+                    </mat-card-content>
+                    <mat-card-actions
+                        ><button
+                            mat-button
+                            (click)="
+                                updateInfoDocument(
+                                    document_to_update,
+                                    form_title,
+                                    form_content
+                                )
+                            "
+                        >
+                            UPDATE DOCUMENT INFORMATION
+                        </button></mat-card-actions
+                    >
+                </mat-card>
+            </mat-grid-tile>
+            <mat-grid-tile
+                [colspan]="colsDocs"
+                [rowspan]="1"
+                *ngIf="jobIDs.classifying_relevant != ''"
+            >
+                Re-training classifier, wait a bit. <mat-spinner></mat-spinner>
+            </mat-grid-tile>
+        </mat-grid-list>
+    </mat-expansion-panel>
+</mat-accordion>
