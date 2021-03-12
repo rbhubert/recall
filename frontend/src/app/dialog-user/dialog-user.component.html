@@ -1,0 +1,17 @@
+<p>Please enter your userID:</p>
+
+<form class="grid-selectUser">
+	<mat-form-field>
+		<input [(ngModel)]="f_username" matInput name="username" required />
+	</mat-form-field>
+	<p class="error" *ngIf="error_message != ''">{{ error_message }}</p>
+
+	<button
+		mat-button
+		color="primary"
+		(click)="checkUsername()"
+		[disabled]="f_username == ''"
+	>
+		Accept
+	</button>
+</form>

@@ -1,1 +1,151 @@
-<p>train-model works!</p>
+<mat-accordion class="example-headers-align">
+	<mat-expansion-panel [expanded]="true" hideToggle>
+		<mat-expansion-panel-header>
+			<mat-panel-title>
+				<strong>Training the model</strong>
+			</mat-panel-title>
+			<mat-panel-description>
+				Select or create a new model, and train it providing examples of
+				relevant and irrelevant documents.
+				<span class="material-icons">
+					thumbs_up_down
+				</span>
+			</mat-panel-description>
+		</mat-expansion-panel-header>
+
+		<mat-grid-list cols="20" rowHeight="50px">
+			<mat-grid-tile [colspan]="3" [rowspan]="3">
+				<mat-radio-group
+					aria-labelledby="example-radio-group-label"
+					class="example-radio-group"
+					[(ngModel)]="createModelForm"
+				>
+					<mat-radio-button
+						class="example-radio-button"
+						[value]="0"
+						(click)="getModels()"
+					>
+						Use existing model
+					</mat-radio-button>
+					<mat-radio-button class="example-radio-button" [value]="1">
+						Create a new model
+					</mat-radio-button>
+				</mat-radio-group>
+			</mat-grid-tile>
+			<mat-grid-tile [colspan]="3" [rowspan]="3">
+				<form class="grid-selectModel" #selectModelForm="ngForm"></form>
+				<div *ngIf="createModelForm == 0">
+					<form class="grid-selectModel" #selectModelForm="ngForm">
+						<mat-form-field>
+							<mat-label>Select a model</mat-label>
+							<mat-select
+								[(ngModel)]="selectedModel"
+								name="model"
+							>
+								<mat-option
+									*ngFor="let model of allModels"
+									[value]="model"
+								>
+									{{ model }}
+								</mat-option>
+							</mat-select>
+						</mat-form-field>
+					</form>
+				</div>
+				<div *ngIf="createModelForm == 1">
+					<form class="grid-selectModel" #selectModelForm="ngForm">
+						<mat-form-field>
+							<mat-label>New model name </mat-label>
+							<input
+								[(ngModel)]="newModelName"
+								matInput
+								name="modelName"
+								required
+							/>
+						</mat-form-field>
+					</form>
+				</div>
+			</mat-grid-tile>
+			<mat-grid-tile [colspan]="2" [rowspan]="3" class="tile2">
+				<span class="material-icons" *ngIf="createModelForm == 1">
+					arrow_right_alt
+				</span>
+				<button
+					*ngIf="createModelForm == 0"
+					mat-button
+					color="primary"
+					(click)="selectModel()"
+					[disabled]="!selectFormModelIsCorrect()"
+				>
+					SELECT MODEL
+				</button>
+			</mat-grid-tile>
+			<mat-grid-tile [colspan]="6" [rowspan]="3">
+				<form
+					class="grid-relevantNews"
+					#relevantNewsForm="ngForm"
+					*ngIf="createModelForm == 1"
+				>
+					<mat-form-field class="example-full-width">
+						<mat-label
+							>Add some urls of
+							<strong>relevant</strong> news</mat-label
+						>
+						<textarea
+							[(ngModel)]="relevantDocs"
+							name="relevant"
+							matInput
+							placeholder="Separated by spaces or enters"
+							required
+						></textarea>
+					</mat-form-field>
+				</form>
+			</mat-grid-tile>
+			<mat-grid-tile [colspan]="6" [rowspan]="3">
+				<form
+					class="grid-relevantNews"
+					#relevantNewsForm="ngForm"
+					*ngIf="createModelForm == 1"
+				>
+					<mat-form-field class="example-full-width">
+						<mat-label
+							>Add some urls of
+							<strong>irrelevant</strong> news</mat-label
+						>
+						<textarea
+							[(ngModel)]="noRelevantDocs"
+							name="irrelevant"
+							matInput
+							placeholder="Separated by spaces or enters"
+							required
+						></textarea>
+					</mat-form-field>
+				</form>
+			</mat-grid-tile>
+			<mat-grid-tile [colspan]="4" [rowspan]="1"> </mat-grid-tile>
+			<mat-grid-tile [colspan]="2" [rowspan]="1"> </mat-grid-tile>
+			<mat-grid-tile [colspan]="7" [rowspan]="1"> </mat-grid-tile>
+			<mat-grid-tile
+				[colspan]="2"
+				[rowspan]="1"
+				*ngIf="createModelForm == 1 && jobs.training === ''"
+			>
+				<button
+					mat-button
+					color="primary"
+					(click)="trainModel()"
+					[disabled]="!toTrainFormIsCorrect()"
+				>
+					TRAIN MODEL
+				</button>
+			</mat-grid-tile>
+			<mat-grid-tile
+				[colspan]="2"
+				[rowspan]="1"
+				*ngIf="jobs.training != ''"
+			>
+				This can take a few seconds. <mat-spinner></mat-spinner>
+			</mat-grid-tile>
+		</mat-grid-list>
+	</mat-expansion-panel>
+</mat-accordion>

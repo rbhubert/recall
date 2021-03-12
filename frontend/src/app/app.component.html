@@ -1,3 +1,21 @@
+<mat-grid-list cols="20" rowHeight="50px" *ngIf="user_selected">
+	<mat-grid-tile [colspan]="3" [rowspan]="1">
+		<div>
+			User:
+			<strong>{{ user }}</strong>
+		</div>
+	</mat-grid-tile>
+	<mat-grid-tile [colspan]="3" [rowspan]="1">
+		<div *ngIf="model != ''">
+			Model:
+			<strong>{{ model }}</strong>
+		</div>
+	</mat-grid-tile>
+	<mat-grid-tile [colspan]="11" [rowspan]="1"> </mat-grid-tile>
+	<mat-grid-tile [colspan]="3" [rowspan]="1">
+		<button mat-flat-button (click)="changeUser()">Change user</button>
+	</mat-grid-tile>
+</mat-grid-list>
+<app-train-model></app-train-model>
 <app-search-query></app-search-query>
-<!-- <app-train-model></app-train-model>
-<app-classification-loop></app-classification-loop> -->
+<app-classification-loop></app-classification-loop>

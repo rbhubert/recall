@@ -1,1 +1,244 @@
-<p>classification-loop works!</p>
+<mat-accordion class="example-headers-align">
+	<mat-expansion-panel hideToggle [disabled]="model === ''">
+		<mat-expansion-panel-header>
+			<mat-panel-title>
+				<strong>Refining results</strong>
+			</mat-panel-title>
+			<mat-panel-description>
+				The model will give you some documents, classify them as
+				relevant or irrelevant. This will help to achieve better results
+				:)
+				<span class="material-icons">
+					all_inclusive
+				</span>
+			</mat-panel-description>
+		</mat-expansion-panel-header>
+		<mat-grid-list cols="30">
+			<mat-grid-tile [colspan]="30" [rowspan]="2">
+				<mat-card class="complete-card">
+					Explore items with {{ slider * 100 }}% to
+					{{ (slider + 0.1) * 100 }}% relevance
+					<mat-slider
+						class="slider_news"
+						[max]="1.0"
+						[min]="0"
+						[step]="0.1"
+						[thumbLabel]="true"
+						[(ngModel)]="slider"
+					>
+					</mat-slider>
+					<button mat-mini-fab (click)="getDocumentsInRange()">
+						<mat-icon>autorenew</mat-icon>
+					</button>
+					<mat-checkbox
+						[(ngModel)]="showPlotBoolean"
+						color="warn"
+						(ngModelChange)="showPlot()"
+					>
+						Show plot
+					</mat-checkbox>
+				</mat-card>
+			</mat-grid-tile>
+			<mat-grid-tile
+				class="list_docs"
+				[colspan]="columnsDocs"
+				[rowspan]="15"
+			>
+				<div class="internalMatGrid">
+					<mat-card class="card-documents">
+						<mat-card-header>
+							<mat-card-title
+								>Documents to classify</mat-card-title
+							>
+							<mat-card-subtitle *ngIf="slider >= 0.5"
+								>that are {{ slider * 100 }}-{{
+									(slider + 0.1) * 100
+								}}% relevants</mat-card-subtitle
+							>
+							<mat-card-subtitle *ngIf="slider < 0.5"
+								>that are {{ (1 - slider - 0.1) * 100 }}-{{
+									(1 - slider) * 100
+								}}% no relevants</mat-card-subtitle
+							>
+							<mat-paginator
+								class="paginator_docs"
+								[length]="length"
+								[pageSize]="pageSize"
+								(page)="nextPage($event)"
+							>
+							</mat-paginator
+						></mat-card-header>
+						<mat-grid-list cols="5" rowHeight="20px">
+							<ng-container
+								*ngFor="let document of documentsToClassify"
+							>
+								<mat-grid-tile [colspan]="1" [rowspan]="5">
+									<p class="probBadge">
+										{{ document.probability }}
+									</p>
+								</mat-grid-tile>
+								<mat-grid-tile
+									[colspan]="2"
+									[rowspan]="5"
+									class="relevantDoc"
+								>
+									<div>
+										<a
+											href="{{ document.url }}"
+											target="_blank"
+										>
+											{{ document.title }}</a
+										>
+										({{ document.number_words }})
+									</div>
+								</mat-grid-tile>
+								<mat-grid-tile
+									[colspan]="1"
+									[rowspan]="1"
+								></mat-grid-tile>
+
+								<mat-grid-tile [colspan]="1" [rowspan]="5">
+									<mat-checkbox
+										[(ngModel)]="document.update"
+										color="warn"
+										(ngModelChange)="
+											updateInfoSection(document)
+										"
+									>
+										Update doc info
+									</mat-checkbox>
+								</mat-grid-tile>
+								<mat-grid-tile
+									[colspan]="1"
+									[rowspan]="3"
+									class="relevantDoc"
+								>
+									<mat-slide-toggle
+										[(ngModel)]="
+											document.classification_user
+										"
+									>
+										<p
+											class="p_toggle"
+											*ngIf="
+												!document.classification_user
+											"
+										>
+											Not relevant
+										</p>
+										<p
+											class="p_toggle"
+											*ngIf="document.classification_user"
+										>
+											Relevant
+										</p>
+									</mat-slide-toggle>
+								</mat-grid-tile>
+								<mat-grid-tile
+									[colspan]="1"
+									[rowspan]="1"
+								></mat-grid-tile>
+							</ng-container>
+						</mat-grid-list>
+						<div *ngIf="documentsToClassify.length == 0">
+							No documents classified in this range.
+						</div>
+						<mat-card-actions
+							*ngIf="documentsToClassify.length > 0"
+						>
+							<button
+								mat-button
+								(click)="copyDocumentsToClassify()"
+							>
+								COPY DOCS TO CLIPBOARD
+							</button>
+							<button mat-button (click)="classifyDocuments()">
+								UPDATE CLASSIFICATION
+							</button>
+						</mat-card-actions></mat-card
+					>
+				</div>
+			</mat-grid-tile>
+			<mat-grid-tile
+				class="plot"
+				[colspan]="13"
+				[rowspan]="12"
+				*ngIf="showPlotBoolean"
+			>
+				<plotly-plot
+					*ngIf="graph.data.length > 0"
+					class="plot_docs"
+					[data]="graph.data"
+					[layout]="graph.layout"
+				></plotly-plot>
+			</mat-grid-tile>
+			<mat-grid-tile
+				class="plot"
+				[colspan]="13"
+				[rowspan]="2"
+				*ngIf="showPlotBoolean"
+				><mat-card class="card-plot">
+					<mat-card-actions
+						><button
+							mat-button
+							(click)="addClassificationByModel()"
+						>
+							SEE MODEL CLASSIFICATION OF CLASSIFIED DOCUMENTS</button
+						><button mat-button (click)="copyRelevants()">
+							COPY RELEVANTS DOCUMENTS</button
+						><button mat-button (click)="copyNotRelevants()">
+							COPY NOT-RELEVANTS DOCUMENTS
+						</button></mat-card-actions
+					></mat-card
+				></mat-grid-tile
+			>
+			<mat-grid-tile
+				class="update_info"
+				[colspan]="13"
+				[rowspan]="6"
+				*ngIf="updateDocBoolean"
+			>
+				<mat-card class="card-doc-info">
+					<mat-card-header>
+						<mat-card-title
+							>Update info</mat-card-title
+						> </mat-card-header
+					><mat-card-content
+						><form class="example-form">
+							<mat-form-field class="example-full-width">
+								<mat-label>Title</mat-label>
+								<input
+									matInput
+									[(ngModel)]="updateTitle"
+									name="title"
+								/>
+							</mat-form-field>
+
+							<mat-form-field class="example-full-width">
+								<mat-label>News item content</mat-label>
+								<textarea
+									class="textarea_doc"
+									matInput
+									[(ngModel)]="updateText"
+									name="text_content"
+								></textarea>
+							</mat-form-field>
+						</form>
+					</mat-card-content>
+					<mat-card-actions
+						><button mat-button (click)="updateDocument()">
+							UPDATE DOCUMENT INFORMATION
+						</button></mat-card-actions
+					>
+				</mat-card>
+			</mat-grid-tile>
+			<mat-grid-tile
+				[colspan]="columnsDocs"
+				[rowspan]="1"
+				*ngIf="jobs.classifying != ''"
+			>
+				Re-training classifier, wait a bit. <mat-spinner></mat-spinner>
+			</mat-grid-tile>
+		</mat-grid-list>
+	</mat-expansion-panel>
+</mat-accordion>

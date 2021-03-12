@@ -16,57 +16,41 @@ export class ApiService {
 		return this.http.get(url);
 	}
 
-	getModels() {
-		var url = this.url_base + "models";
+	getUser(username) {
+		var url = this.url_base + "user/" + username;
 		return this.http.get(url);
 	}
 
-	createModel(model_info) {
-		var url = this.url_base + "model/" + model_info.model_name;
+	createModel(modelName, documents, username) {
+		var url = this.url_base + "model/" + modelName;
 
 		const myheader = new HttpHeaders().set(
 			"Content-Type",
 			"application/x-www-form-urlencoded"
 		);
 		let body = new HttpParams();
-		body = body.set("model_info", JSON.stringify(model_info));
+		body = body.set("training_documents", JSON.stringify(documents));
+		body = body.set("username", username);
 
 		return this.http.post(url, body, {
 			headers: myheader,
 		});
 	}
 
-	selectModel(model_name) {
-		var url = this.url_base + "model/" + model_name;
+	loadModel(modelName) {
+		var url = this.url_base + "model/" + modelName;
+
 		return this.http.get(url);
 	}
 
-	trainModel(model_info, relevant_news, irrelevant_news) {
-		var url = this.url_base + "train";
+	searchQuery(modelName, searchSource, query) {
+		var url = this.url_base + "search/" + searchSource + "/" + modelName;
 
 		const myheader = new HttpHeaders().set(
 			"Content-Type",
 			"application/x-www-form-urlencoded"
 		);
 		let body = new HttpParams();
-		body = body.set("model_info", JSON.stringify(model_info));
-		body = body.set("relevant_docs", relevant_news);
-		body = body.set("irrelevant_docs", irrelevant_news);
-
-		return this.http.post(url, body, {
-			headers: myheader,
-		});
-	}
-
-	searchQuery(model_info, source, query) {
-		var url = this.url_base + "search/" + source;
-
-		const myheader = new HttpHeaders().set(
-			"Content-Type",
-			"application/x-www-form-urlencoded"
-		);
-		let body = new HttpParams();
-		body = body.set("model_info", JSON.stringify(model_info));
 		body = body.set("query", query);
 
 		return this.http.post(url, body, {
@@ -74,37 +58,37 @@ export class ApiService {
 		});
 	}
 
-	getDocumentsToClassify(model_info) {
-		var url =
-			this.url_base +
-			"relevant/" +
-			model_info.model_type_data +
-			"/" +
-			model_info.model_name;
+	getDocumentsInRange(modelName, range) {
+		var url = this.url_base + "documents_in_range/" + modelName + "/" + range;
 
 		return this.http.get(url);
 	}
 
-	getDocumentsInRange(model_info, range) {
-		var url =
-			this.url_base +
-			"relevant/" +
-			model_info.model_type_data +
-			"/" +
-			model_info.model_name +
-			"/" +
-			range;
+	getInformationPlot(modelName, alreadyClassified) {
+		var url = this.url_base + "plot/" + modelName + "/" + alreadyClassified;
 
 		return this.http.get(url);
 	}
 
-	documentsClassifiedByUser(model_info, documents) {
-		var url =
-			this.url_base +
-			"classify/" +
-			model_info.model_type_data +
-			"/" +
-			model_info.model_name;
+	updateDocument(url_item, title, text) {
+		var url = this.url_base + "update/";
+
+		const myheader = new HttpHeaders().set(
+			"Content-Type",
+			"application/x-www-form-urlencoded"
+		);
+		let body = new HttpParams();
+		body = body.set("url", url_item);
+		body = body.set("title", title);
+		body = body.set("text", text);
+
+		return this.http.post(url, body, {
+			headers: myheader,
+		});
+	}
+
+	classifyDocuments(modelName, documents) {
+		var url = this.url_base + "classify/" + modelName;
 
 		const myheader = new HttpHeaders().set(
 			"Content-Type",
@@ -116,27 +100,5 @@ export class ApiService {
 		return this.http.post(url, body, {
 			headers: myheader,
 		});
-	}
-
-	getInfoPlot(model_info) {
-		var url =
-			this.url_base +
-			"plot/" +
-			model_info.model_type_data +
-			"/" +
-			model_info.model_name;
-
-		return this.http.get(url);
-	}
-
-	getClassifiedPlot(model_info) {
-		var url =
-			this.url_base +
-			"plot/classified/" +
-			model_info.model_type_data +
-			"/" +
-			model_info.model_name;
-
-		return this.http.get(url);
 	}
 }

@@ -31,13 +31,22 @@ import { MatPaginatorModule } from "@angular/material/paginator";
 
 import * as PlotlyJS from "plotly.js/dist/plotly.js";
 import { PlotlyModule } from "angular-plotly.js";
-import { TrainModelComponent } from './train-model/train-model.component';
-import { ClassificationLoopComponent } from './classification-loop/classification-loop.component';
+import { TrainModelComponent } from "./train-model/train-model.component";
+import { ClassificationLoopComponent } from "./classification-loop/classification-loop.component";
+
+import { MatDialogModule } from "@angular/material/dialog";
+import { DialogUserComponent } from "./dialog-user/dialog-user.component";
 
 PlotlyModule.plotlyjs = PlotlyJS;
 
 @NgModule({
-    declarations: [AppComponent, SearchQueryComponent, TrainModelComponent, ClassificationLoopComponent],
+    declarations: [
+        AppComponent,
+        SearchQueryComponent,
+        TrainModelComponent,
+        ClassificationLoopComponent,
+        DialogUserComponent,
+    ],
     imports: [
         BrowserModule,
         AppRoutingModule,
@@ -65,6 +74,7 @@ PlotlyModule.plotlyjs = PlotlyJS;
         MatSliderModule,
         MatCheckboxModule,
         MatPaginatorModule,
+        MatDialogModule,
     ],
     providers: [],
     bootstrap: [AppComponent],
