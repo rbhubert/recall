@@ -109,7 +109,7 @@ def classify_documents(model_name):
     return Response(jobId_js, status=200, mimetype='application/json')
 
 
-@FLASK_APP.route('/plot/<model_name>/<already_classified>', methods=['POST'])
+@FLASK_APP.route('/plot/<model_name>/<already_classified>', methods=['GET'])
 def get_information_plot(model_name, already_classified):
     already_classified = True if already_classified == "true" else False
     response = task_handler.get_information_plot(model_name, already_classified)

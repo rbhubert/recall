@@ -6,52 +6,9 @@ import numpy as np
 import pandas
 
 from classifier.model import DeepLearningModel
-from db import database, database
-from db.database import newsDB, redditDB
-from enums import sources_base, news
-from enums.type_data import DataType, type_database, type_search
-
-
-def restructuring_db():
-    old_news = database.newsDB
-    new_news = database.newsDB
-
-    all_documents_old = pandas.DataFrame(list(old_news.get_all_info_items()))
-
-    for index, doc in all_documents_old.iterrows():
-        if news.sources_base.KEYWORDS in doc:
-            if isinstance(doc[news.sources_base.KEYWORDS], list):
-                mylist = [each_string.lower() for each_string in doc[news.sources_base.KEYWORDS]]
-                keywords = list(dict.fromkeys(mylist))
-            else:
-                keywords = list(dict.fromkeys(doc[news.sources_base.CLASSIFICATION_BY_MODEL]))
-                keywords = [each_string.lower() for each_string in keywords]
-        else:
-            keywords = list(dict.fromkeys(doc[news.sources_base.CLASSIFICATION_BY_MODEL]))
-            keywords = [each_string.lower() for each_string in keywords]
-
-        doc_item = {
-            sources_base.URL: doc[news.URL],
-            sources_base.CREATION_TIME: doc[news.CREATION_TIME],
-            sources_base.TITLE: doc[news.TITLE],
-            sources_base.TEXT: doc[news.CONTENT],
-            sources_base.KEYWORDS: keywords,
-            sources_base.DATATYPE: DataType.GOOGLE,
-            sources_base.MODELS: {}
-        }
-
-        all_models = doc[news.sources_base.CLASSIFICATION_BY_MODEL]
-        for model_name, classification in all_models.items():
-            doc_item[sources_base.MODELS][model_name] = None
-
-        classification_user = doc[news.sources_base.CLASSIFICATION]
-        if isinstance(classification_user, dict):
-            for model_name, classification in classification_user.items():
-                doc_item[sources_base.MODELS][model_name] = classification
-        else:
-            doc_item[sources_base.MODELS]["MiyukiModel"] = classification_user
-
-        new_news.add_info(doc_item)
+from db.database import redditDB
+from enums import sources_base
+from enums.type_data import type_database, type_search
 
 
 def restructuring_reddit():
@@ -148,6 +105,44 @@ def change_names(directory):
             # go again through directories
             change_names(directory + filename + "/")
 
+
 # model_name = "kharisse_violence_migrant_women"
 # x = get_documents_in_buckets(model_name=model_name)
 # # print(x)
+
+from db.database import newsDB
+
+
+def testing_number_results(model_name):
+    all_news = pandas.DataFrame(list(newsDB.get_elements_by_model(model_name, include_classified=True)))
+    print(all_news.count())
+    excepto_this = ['sex workers thailand','sex workers philippines','sex workers laos','sex workers myanmar','sex workers timor-leste','sex workers vietnam']
+    dictionary_searches = {}
+    counter = 0
+    for index, row in all_news.iterrows():
+        searches = row["search_keywords"]
+
+        if any(e in excepto_this for e in searches):
+            pass
+        else:
+            counter += 1
+
+        for sea in searches:
+            if sea in dictionary_searches:
+                dictionary_searches[sea] += 1
+            else:
+                dictionary_searches[sea] = 1
+
+    print(dictionary_searches)
+    print(counter)
+    # searches = all_news["search_keywords"].apply(pandas.Series)
+    # print(searches)
+
+
+#testing_number_results("MiyukiModel")
+
+def how_many_news(model_name):
+    all_news = newsDB.get_elements_by_model(model_name=model_name, include_classified=True)
+    print(all_news.count())
+
+how_many_news("MiyukiModel")

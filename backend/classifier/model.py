@@ -6,8 +6,8 @@ from db.database import modelDB
 from enums import model, sources_base
 
 # TODO cambiar estos directorios a algo más general...
-directory_files = "/Users/rbh/dev/GitHub/searchAL/backendAL/temp/files/"
-directory_models = "/Users/rbh/dev/GitHub/searchAL/backendAL/temp/models/"
+directory_files = "/Users/rbh/dev/GitHub/recall/backend/temp/files/"
+directory_models = "/Users/rbh/dev/GitHub/recall/backend/temp/models/"
 
 
 class DeepLearningModel:

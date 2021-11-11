@@ -157,8 +157,72 @@ def classify_documents(model_name, documents_list):
 
 
 def get_information_plot(model_name, already_classified=False):
-    # todo
-    return
+    classifier = DeepLearningModel(model_name)
+    df_documents = __get_dataframe(model_name=model_name, classifier=classifier, already_classified=True)
+
+    df_documents["user_label"] = df_documents[sources_base.MODELS].apply(lambda x: x[model_name])
+
+    df_documents["model_probability"] = df_documents.apply(lambda row: __get_relevance_probability(row), axis=1)
+    df_documents["number_words"] = df_documents.apply(lambda row: __get_number_words(row), axis=1)
+    df_documents["text_to_display"] = df_documents.apply(lambda row: __get_text(row), axis=1)
+
+    df_user = df_documents[~df_documents["user_label"].isnull()]
+    df_relevant = df_user[df_user["user_label"] == "relevant"]
+    df_no_relevant = df_user[df_user["user_label"] != "relevant"]
+
+    if already_classified:
+        user_x = df_documents.apply(lambda row: 1 if row["user_label"] == "relevant" else 0, axis=1)
+
+        to_return = {
+            "traces": {
+                "number_relevants": df_relevant.shape[0],
+                "number_no_relevants": df_no_relevant.shape[0],
+                "number_model": df_documents.shape[0] - df_user.shape[0],
+                "trace_model": {
+                    "x": df_documents["model_probability"].values.tolist(),
+                    "y": df_documents["number_words"].values.tolist(),
+                    "text": df_documents["text_to_display"].values.tolist()
+                },
+                "trace_user": {
+                    "x": user_x.values.tolist(),
+                    "y": df_user["number_words"].values.tolist(),
+                    "text": df_user["text_to_display"].values.tolist()
+                },
+                "max_words": max(df_documents["number_words"])
+            },
+            "classified_by_user": {
+                "relevant": [],
+                "no_relevant": []
+            }
+        }
+    else:
+
+        to_return = {
+            "trace_relevant": {
+                "x": df_relevant["model_probability"].values.tolist(),
+                "y": df_relevant["number_words"].values.tolist(),
+                "text": df_relevant["text_to_display"].values.tolist()
+            },
+            "trace_no_relevant": {
+                "x": df_no_relevant["model_probability"].values.tolist(),
+                "y": df_no_relevant["number_words"].values.tolist(),
+                "text": df_no_relevant["text_to_display"].values.tolist()
+            },
+        }
+
+    return to_return
+
+
+def __get_number_words(row):
+    datasearch = row[sources_base.DATATYPE]
+    return len(datasearch.get_text(row).split())
+
+
+def __get_text(row):
+    title = row[sources_base.TITLE]
+    url = row[sources_base.URL]
+
+    return title + "\n" + url
 
 
 def update_document(url_item, title, text):
@@ -198,7 +262,7 @@ def __retrieve_documents_df(model_name, documents):
 
 
 # this will get the classification from the model for each document
-def __get_dataframe(model_name, classifier):
+def __get_dataframe(model_name, classifier, already_classified=False):
     """
     Gets all documents associated with the model and classify them
     :param model_name:
@@ -208,7 +272,8 @@ def __get_dataframe(model_name, classifier):
     df_documents = pandas.DataFrame()
 
     for key, db in type_database.items():
-        list_docs = pandas.DataFrame(list(db.get_elements_by_model(model_name=model_name)))
+        list_docs = pandas.DataFrame(
+            list(db.get_elements_by_model(model_name=model_name, include_classified=already_classified)))
         list_docs[sources_base.DATATYPE] = list_docs.apply(lambda row: type_search[key], axis=1)
 
         if list_docs.empty:

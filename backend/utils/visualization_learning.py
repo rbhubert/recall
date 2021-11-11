@@ -8,56 +8,59 @@ from matplotlib import animation
 from classifier.model import DeepLearningModel
 from db.database import newsDB
 from enums import sources_base
-from search import google
+#
+# def histogram(model_name):
+#     def __probability(row):
+#         probability = row[model_name][sources_base.CLASSIFICATION_PROBABILITY]
+#         value = probability if row[model_name][
+#                                    sources_base.CLASSIFICATION_MODEL] == "relevant" else 1 - probability
+#
+#         return value
+#
+#     all_documents = pandas.DataFrame(list(newsDB.get_all_by_model(model_name)))
+#     all_documents[sources_base.CLASSIFICATION_PROBABILITY] = all_documents[sources_base.CLASSIFICATION_BY_MODEL].apply(
+#         lambda dict_x: __probability(dict_x))
+#
+#     new_df = all_documents.groupby(
+#         pandas.cut(all_documents[sources_base.CLASSIFICATION_PROBABILITY], np.arange(0, 1.0 + 0.05, 0.05))).count()[
+#         sources_base.CLASSIFICATION_PROBABILITY]
+#
+#     new_df.plot.bar()
+#     plt.show()
 
-
-def histogram(model_name):
-    def __probability(row):
-        probability = row[model_name][sources_base.CLASSIFICATION_PROBABILITY]
-        value = probability if row[model_name][
-                                   sources_base.CLASSIFICATION_MODEL] == "relevant" else 1 - probability
-
-        return value
-
-    all_documents = pandas.DataFrame(list(newsDB.get_all_by_model(model_name)))
-    all_documents[sources_base.CLASSIFICATION_PROBABILITY] = all_documents[sources_base.CLASSIFICATION_BY_MODEL].apply(
-        lambda dict_x: __probability(dict_x))
-
-    new_df = all_documents.groupby(
-        pandas.cut(all_documents[sources_base.CLASSIFICATION_PROBABILITY], np.arange(0, 1.0 + 0.05, 0.05))).count()[
-        sources_base.CLASSIFICATION_PROBABILITY]
-
-    new_df.plot.bar()
-    plt.show()
-
+from enums.type_data import type_search
 
 # TODO add information about number of examples for each loop, and total number of examples provided
 # by the user at the beginning
 def a_histogram(model_name, n_examples=10, n_classified=4):
     def __get_classification(row):
-        dict_classification = row[sources_base.CLASSIFICATION]
-        return dict_classification[model_name] if model_name in dict_classification else None
+        datatype = row[sources_base.DATATYPE]
+        result = classifier.predict(type_search[datatype].get_text(row))
+        classification = result[sources_base.LABEL].replace("__label__", "")
+        probability = result[sources_base.PROBABILITY]
+        #return dict_classification[model_name] if model_name in dict_classification else None
 
-    classifier = DeepLearningModel(name=model_name, newModel=False)
+    classifier = DeepLearningModel(name=model_name)
 
     # preparation of the examples documents (already classified by the user)
-    documents_classified_by_user = pandas.DataFrame(list(newsDB.get_all_by_model(model_name, classified_by_user=True)))
-    documents_classified_by_user[sources_base.CLASSIFICATION] = documents_classified_by_user[
-        sources_base.CLASSIFICATION].apply(
-        lambda x: x[model_name])
+    documents_classified_by_user = pandas.DataFrame(list(newsDB.get_all_classified_by_user(model_name)))
+    documents_classified_by_user[sources_base.TEXT] = documents_classified_by_user.apply(lambda x: type_search[x[sources_base.DATATYPE]].get_text(x), axis=1)
+
+    documents_classified_by_user[sources_base.LABEL] = documents_classified_by_user[
+        sources_base.MODELS].apply(lambda x: x[model_name])
 
     # preparation of all the documents (including those already classified by the user)
-    all_documents = pandas.DataFrame(list(newsDB.get_all_by_model(model_name, include_user=True)))
-    all_documents[sources_base.TEXT] = all_documents.apply(lambda x: google.get_text(x), axis=1)
-    all_documents[sources_base.CLASSIFICATION] = all_documents.apply(
-        lambda x: __get_classification(x), axis=1)
+    all_documents = pandas.DataFrame(list(newsDB.get_elements_by_model(model_name, include_classified=True)))
+    all_documents[sources_base.TEXT] = all_documents.apply(lambda x: type_search[x[sources_base.DATATYPE]].get_text(x), axis=1)
+    all_documents[sources_base.LABEL] = all_documents[sources_base.MODELS].apply(lambda x: x[model_name])
+    # all_documents["classification"] = all_documents.apply(
+    #     lambda x: __get_classification(x), axis=1)
     all_documents = all_documents.drop(
-        columns=['url', 'title', 'content_text', 'creation_time', 'comments', 'last_comment', 'classification_by_model',
-                 'search_keywords'])
+        columns=['url', 'title', 'creation_time', 'search_keywords', 'datatype', 'models'])
 
     # this will be use every time that we train the model, its grow with every loop
     # (since we add n_classified docs each time)
-    training_docs = pandas.DataFrame(columns=[sources_base.TEXT, sources_base.CLASSIFICATION])
+    training_docs = pandas.DataFrame(columns=[sources_base.TEXT, "classification"])
 
     def __get_examples_doc(number_examples, first=False):
         nonlocal documents_classified_by_user, training_docs
@@ -65,18 +68,16 @@ def a_histogram(model_name, n_examples=10, n_classified=4):
         if first:
             div = number_examples // 2
             examples_d = documents_classified_by_user[
-                documents_classified_by_user[sources_base.CLASSIFICATION] == "relevant"].sample(n=math.ceil(div))
-            examples_d = examples_d.append(documents_classified_by_user[documents_classified_by_user[
-                                                                            sources_base.CLASSIFICATION] == "no_relevant"].sample(
+                documents_classified_by_user[sources_base.LABEL] == "relevant"].sample(n=math.ceil(div))
+            examples_d = examples_d.append(documents_classified_by_user[documents_classified_by_user[sources_base.LABEL] == "no_relevant"].sample(
                 n=math.floor(div)))
         else:
             n_examples = min(number_examples, len(documents_classified_by_user.index))
-
             examples_d = documents_classified_by_user.sample(n=n_examples)
 
         examples_d = examples_d.apply(
-            lambda row: pandas.Series([google.get_text(row), row[google.news.CLASSIFICATION]]), axis=1)
-        examples_d.columns = [sources_base.TEXT, sources_base.CLASSIFICATION]
+            lambda row: pandas.Series([row[sources_base.TEXT], row[sources_base.LABEL]]), axis=1)
+        examples_d.columns = [sources_base.TEXT, sources_base.LABEL]
 
         documents_classified_by_user = documents_classified_by_user.drop(examples_d.index)
         training_docs = training_docs.append(examples_d)
@@ -84,9 +85,9 @@ def a_histogram(model_name, n_examples=10, n_classified=4):
     def get_prediction(row):
         nonlocal classifier
         prediction = classifier.predict(row[sources_base.TEXT])
-        probability = prediction[sources_base.CLASSIFICATION_PROBABILITY]
+        probability = prediction[sources_base.PROBABILITY]
         value = probability if prediction[
-                                   sources_base.CLASSIFICATION_MODEL] == "__label__relevant" else 1 - probability
+                                   sources_base.LABEL] == "__label__relevant" else 1 - probability
 
         return value
 
@@ -156,6 +157,8 @@ def a_histogram(model_name, n_examples=10, n_classified=4):
 
 # model_name = "KharisseModel" # start with 6 examples
 # model_name = "Gender_based_violence"  # start with 23 examples
-model_name = "kharisse_violence_migrant_women" # stars with 20 examples
+#model_name = "kharisse_violence_migrant_women" # stars with 20 examples
 # histogram(model_name)
+
+model_name = "MiyukiModel"
 a_histogram(model_name, n_examples=20)
