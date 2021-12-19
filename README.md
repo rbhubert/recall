@@ -1,7 +1,7 @@
 # recall
 recall is a web tool for the recovery of **re**levant information through **c**lassification in an **a**ctive **l**earning **l**oop.
 
-# How does it works?
+# How does it work?
 The tool allows an expert user to retrieve information from different sources (in particular from Reddit, Twitter and Google News) by using keywords; and classify as relevant or irrelevant a small number of documents. With this information, the tool can identify, from the total set of recovered documents, those really relevant to the user.
 
 For these tasks the tool makes use of classification models and active learning cycles. You can view the relevant information for the [frontend](frontend/README.md) and the [backend](backend/README.md).
