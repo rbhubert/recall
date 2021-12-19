@@ -1,4 +1,4 @@
-# Backend for [recall](./README.md)
+# Backend for [recall](/README.md)
 
 The backend for this project was written with Python 3.8.1. The following libraries were used:
 - For the server general functionality: 
